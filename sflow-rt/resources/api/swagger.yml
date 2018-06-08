@@ -1,0 +1,1156 @@
+swagger: "2.0"
+info:
+  title: RESTflow
+  description: Real-time sFlow analytics [REST API](http://www.sflow-rt.com/reference.php#rest) for sFlow-RT. See [Writing Applications](http://www.sflow-rt.com/writing_applications.php).
+
+  contact:
+    name: sFlow-RT.com
+    url: http://sflow-rt.com/index.php
+
+  license:
+    name: InMon sFlow-RT License Agreement
+    url: http://www.inmon.com/products/sFlow-RT/license.php
+
+  version: 1.0.0
+
+paths:
+
+  /version:
+    get:
+      summary: Software version
+      tags:
+        - server
+      produces:
+        - text/plain
+      responses:
+        200:
+          description: OK
+
+  /analyzer/json:
+    get:
+      summary: sFlow analyzer performance information
+      tags:
+        - server
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /agents/json:
+    get:
+      summary: List sFlow agents with session information
+      tags:
+        - server
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: query
+          type: string
+          description: Agent IP address
+          required: false
+      responses:
+        200:
+          description: OK
+
+  /metrics/json:
+    get:
+      summary: List names of available metrics
+      description: List currently active metrics and elapsed time (in mS) since last seen.
+      tags:
+        - metrics
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /metric/{agent}/json:
+    get:
+      summary: List names of available metrics and latest values received from agent
+      tags:
+        - metrics
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: string
+          description: IP address
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Not found
+
+  /metric/{agent}/{metric}/json:
+    get:
+      summary: Get summary statistics for metrics
+      tags:
+        - metrics
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: array
+          items:
+            type: string
+          description: IP address(es) or ALL
+          required: true
+        - name: metric
+          in: path
+          type: array
+          items:
+            type: string
+          description: Metric name(s)
+          required: true
+      responses:
+        200:
+          description: OK 
+
+  /table/{agent}/{metric}/json:
+    get:
+      summary: Get table of metric values
+      tags:
+        - metrics
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: array
+          items:
+            type: string
+          description: IP address(es) or ALL
+          required: true
+        - name: metric
+          in: path
+          type: array
+          items:
+            type: string
+          description: Metric name(s)
+          required: true
+      responses:
+        200:
+          description: OK
+
+  /dump/{agent}/{metric}/json:
+    get:
+      summary: Get metric values
+      tags:
+        - metrics
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: array
+          items:
+            type: string
+          description: IP address(es) or ALL
+          required: true
+        - name: metric
+          in: path
+          type: array
+          items: 
+            type: string
+          description: Metric name(s) or ALL
+          required: true
+      responses:
+        200:
+          description: OK
+
+  /flowkeys/json:
+    get:
+      summary: List available flow keys
+      description: List currently active flow keys and elapsed time (in mS) since last seen.
+      tags:
+        - flows
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /flow/json:
+    get:
+      summary: Get flow definitions
+      tags:
+        - flow
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /flow/{name}/json:
+    get:
+      summary: Get flow definition
+      tags:
+        - flow
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Flow definition name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found
+    put:
+      summary: Create or update flow definition
+      description: "Build flow records using packet samples. See [Define Flows](http://www.sflow-rt.com/define_flow.php) for more information."
+      tags:
+        - flow
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Flow definition name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - value
+            properties:
+              keys:
+                type: string
+                description: List of flow keys
+                example: ipsource,ipdestination
+              value:
+                type: string
+                description: Numeric flow key
+                example: bytes
+              filter:
+                type: string
+                description: Boolean expression filtering flow keys
+                example: ipsource=10.0.0.1
+              n:
+                type: integer
+                description: Number of largest flows to maintain
+                example: 5
+              t:
+                type: integer
+                description: Smoothing factor (in seconds)
+                example: 10
+              fs:
+                type: string
+                description: Separates flow record fields
+                example: _SEP_
+              log:
+                type: boolean
+                description: Log flows
+                example: true
+              flowStart:
+                type: boolean
+                description: Log start of flow, otherwise record end of flow
+                example: true
+              activeTimeout:
+                type: integer
+                description: Number of seconds before flushing active flow
+                example: 60
+              ipfixCollectors:
+                type: array
+                description: Send IPFIX records to specified collectors
+                items:
+                  type: string
+                example:
+                  - 10.0.0.2
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Remove flow definition
+      tags:
+        - flow
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Flow definition name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden 
+
+  /activeflows/{agent}/{name}/json:
+    get:
+      summary: List top active flows
+      description: List top active flows, removing duplicates for flows reported by multiple data sources.
+      tags:
+        - flows
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: array
+          items:
+            type: string
+          description: IP address(es) or ALL
+          required: true
+        - name: name
+          in: path
+          type: string
+          description: Flow definition name
+          required: true
+        - name: maxFlows
+          in: query
+          type: integer
+          description: Maximum number of flows
+          required: false
+        - name: minValue
+          in: query
+          type: number
+          description: Minimum flow value
+          required: false
+        - name: aggMode
+          in: query
+          type: string
+          description: Method for combining flows across data sources, sum, max, EDGE, CORE
+          required: false
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+
+  /flowvalue/{agent}/{name}/json:
+    get:
+      summary: Get value for specific flow
+      description: Select a specific data source and flow and get its value.
+      tags:
+        - flows
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: string
+          description: IP address of agent
+          required: true
+        - name: name
+          in: path
+          type: string
+          description: Location and flow metric name, e.g. 22.tcp for tcp flows on port 22
+          required: true
+        - name: key
+          in: query
+          type: string
+          description: Flow key, e.g. 10.0.0.1,10.0.0.2,22,45333
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Not found
+
+  /flowlocations/{agent}/{name}/json:
+    get:
+      summary: Get locations that observed a specific flow
+      tags:
+        - flows
+      produces:
+        - application/json
+      parameters:
+        - name: agent
+          in: path
+          type: array
+          items:
+            type: string
+          description: IP address(es) or ALL
+          required: true
+        - name: name
+          in: path
+          type: string
+          description: Flow metric name, e.g. tcp
+          required: true
+        - name: key
+          in: query
+          type: string
+          description: Flow key, e.g. 10.0.0.1,10.0.0.2,22,45333
+          required: false
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not found
+
+  /flows/json:
+    get:
+      summary: Get most recently logged flows
+      description: List completed flows. Flows will only be logged if log:true is specified in the flow definition.
+      tags:
+        - flows
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: query
+          type: string
+          description: Select flows matching definition name
+          required: false
+        - name: flowID
+          in: query
+          type: integer
+          description: Wait for flows after flowID
+          required: false
+        - name: maxFlows
+          in: query
+          type: integer
+          description: Maximum number of flows to return
+          required: false
+        - name: timeout
+          in: query
+          type: integer
+          description: Maximum number of seconds to wait for new flows
+          required: false
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+
+  /groups/json:
+    get:
+      summary: List address groups
+      tags:
+        - group
+      produces:
+        - application/json
+      responses:
+       200:
+         description: OK
+
+  /group/{name}/json:
+    get:
+      summary: Get group definition
+      tags:
+        - group
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Group definition name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found
+    put:
+      summary: Create or update group
+      description: Define IP address group, mapping CIDRs to names. Used in flow definitions to group addresses.
+      tags:
+        - group
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Group definition name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            example:
+              external:
+                - 0.0.0.0/0
+              internal:
+                - 10.0.0.0/8
+                - 172.16.0.0/12
+                - 192.168.0.0/16
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Delete group
+      tags:
+        - group
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Group definition name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden 
+
+  /maps/json:
+    get:
+      summary: List maps
+      tags:
+        - map
+      produces:
+        - application/json
+      responses:
+       200:
+         description: OK
+
+  /map/{name}/json:
+    get:
+      summary: Get map definition
+      tags:
+        - map
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Map definition name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found
+    put:
+      summary: Create or update group
+      description: Map values to names. Used in flow definitions.
+      tags:
+        - map
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Map definition name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            example:
+              mail:
+                - "25"
+              web:
+                - "80"
+                - "8080"
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Delete map
+      tags:
+        - map
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Map definition name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+
+  /threshold/json:
+    get:
+      summary: List threshold definitions
+      tags:
+        - threshold
+      produces:
+        - application/json
+      responses:
+       200:
+         description: OK
+
+  /threshold/{name}/json:
+    get:
+      summary: Get threshold definition
+      tags:
+        - threshold
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Threshold definition name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found
+    put:
+      summary: Create or update threshold definition
+      description: Apply threshold to metric value and generate events when threshold is exceeded.
+      tags:
+        - threshold
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Threshold definition name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              metric:
+                type: string
+                description: Metric to apply threshold to
+                example: load_one
+              value:
+                type: number
+                description: Maximum value of metric
+                example: 10
+              filter:
+                type: object
+                example:
+                  os_name:
+                    - linux
+              byFlow:
+                type: boolean
+                description: Set to true to generate a new event for each new flow exceeding threshold
+                example: false
+              timeout:
+                type: integer
+                description: Seconds of hysteresis before re-arming threshold
+                example: 10
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Delete threshold
+      tags:
+        - threshold
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Threshold definition name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+  /events/json:
+    get:
+      summary: Get most recently logged events
+      description: List events. Events will only be generated if thresholds are defined.
+      tags:
+        - events
+      produces:
+        - application/json
+      parameters:
+        - name: thresholdID
+          in: query
+          type: string
+          description: Select events matching threshold definition name
+          required: false
+        - name: eventID
+          in: query
+          type: integer
+          description: Wait for flows after eventID
+          required: false
+        - name: maxEvents
+          in: query
+          type: integer
+          description: Maximum number of events to return
+          required: false
+        - name: timeout
+          in: query
+          type: integer
+          description: Maximum number of seconds to wait for new events
+          required: false
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+
+  /forwarding/json:
+    get:
+      summary: List sFlow forwarding entries
+      tags:
+        - forwarding
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /forwarding/{name}/json:
+    get:
+      summary: Get forwarding entry
+      tags:
+        - forwarding
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Forwarding entry name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found 
+    put:
+      summary: Create or update forwarding entry
+      description: Forward sFlow datagrams to additional collector
+      tags:
+        - forwarding
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Forwarding entry name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              address:
+                type: string
+                description: sFlow collector address
+                example: 10.0.0.1
+              port:
+                type: integer
+                description: sFlow collector UDP port
+                example: 6343
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Delete forwarding entry
+      tags:
+        - forwarding
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Forwarding entry name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+
+  /topology/json:
+    get:
+      summary: Get network topology
+      tags:
+        - topology
+      responses:
+        200:
+          description: OK
+    put:
+      summary: Set network topology
+      description: Topology describes physical connections between switches and associates sFlow data sources with switch ports.
+      tags:
+        - topology
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              nodes:
+                type: object
+                example:
+                  leaf1:
+                    agent: 10.0.0.1
+                    ports:
+                      eth1:
+                        ifindex: "2"
+                  spine1:
+                    agent: 10.0.0.2
+                    ports:
+                      eth2:
+                        ifindex: "3"
+              links:
+                type: object
+                example:
+                  link1:
+                    node1: leaf1
+                    port1: eth1
+                    node2: spine1
+                    port2: eth2 
+      responses:
+        204:
+          description: No content
+
+  /tenants/json:
+    get:
+      summary: List tenant sFlow forwarding entries
+      description: List tenant names and the number of samples forwarded
+      tags:
+        - forwarding
+      produces:
+        - application/json
+      responses:
+        200:
+          description: OK
+
+  /tenant/{name}/json:
+    get:
+      summary: Get tenant sFlow forwarding entry
+      tags:
+        - forwarding
+      produces:
+        - application/json
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Tenant name
+          required: true
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request
+        404:
+          description: Not Found 
+    put:
+      summary: Create or update tenant sFlow forwarding entry
+      description: Forward selected sFlow datagrams to additional collector
+      tags:
+        - forwarding
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Tenant name
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              collectorAddress:
+                type: string
+                description: sFlow collector address
+                example: 10.0.0.1
+              collectorPort:
+                type: integer
+                description: sFlow collector UDP port
+                example: 6343
+              filters:
+                type: object
+                description: Select sFlow data sources
+                example:
+                  cidr:
+                    - 10.0.0.0/24
+                  mac:
+                    - D8D385B2DD2B
+                  ifindex:
+                    - 10.0.0.1_2
+                  ifname:
+                    - 10.0.0.1_eth3
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+    delete:
+      summary: Delete tenant forwarding entry
+      tags:
+        - forwarding
+      parameters:
+        - name: name
+          in: path
+          type: string
+          description: Tenant name
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request
+        403:
+          description: Forbidden
+
+  /bgp/topprefixes/{router}/json:
+    get:
+      summary: Query for most active IPv4 prefixes
+      tags:
+        - bgp
+      produces:
+        - application/json
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: maxPrefixes
+          in: query
+          type: integer
+          description: Maximum number of prefixes to return
+          required: false
+        - name: minValue
+          in: query
+          type: number
+          description: Minimum value to include in result
+          required: false
+        - name: direction
+          in: query
+          type: string
+          description: Direction of traffic, source or destination
+          required: false
+        - name: includeCovered
+          in: query
+          type: boolean
+          description: Include prefixes that are covered by top prefix but wouldn't otherwise make list
+          required: false
+        - name: pruneCovered
+          in: query
+          type: boolean
+          description: Eliminate covered prefixes that share same next-hop
+          required: false
+        - name: minPrefix
+          in: query
+          type: integer
+          description: Exlude short prefixes, e.g. set to 1 to exclude 0.0.0.0/0
+          required: false
+      responses:
+         200:
+           description: OK
+
+  /bgp/topprefixes6/{router}/json:
+    get:
+      summary: Query for most active IPv6 prefixes
+      tags:
+        - bgp
+      produces:
+        - application/json
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: maxPrefixes
+          in: query
+          type: integer
+          description: Maximum number of prefixes to return
+          required: false
+        - name: minValue
+          in: query
+          type: number
+          description: Minimum value to include in result
+          required: false
+        - name: direction
+          in: query
+          type: string
+          description: Direction of traffic, source or destination
+          required: false
+        - name: includeCovered
+          in: query
+          type: boolean
+          description: Include prefixes that are covered by top prefix but wouldn't otherwise make list
+          required: false
+        - name: pruneCovered
+          in: query
+          type: boolean
+          description: Eliminate covered prefixes that share same next-hop
+          required: false
+        - name: minPrefix
+          in: query
+          type: integer
+          description: Exlude short prefixes, e.g. set to 1 to exclude 0.0.0.0/0
+          required: false
+      responses:
+         200:
+           description: OK
+
+  /bgp/prefix/{router}/json:
+    get:
+      summary: Get information on BGP prefix associated with IP address
+      tags:
+        - bgp
+      produces:
+        - application/json
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: address
+          in: query
+          type: string
+          description: IPv4 or IPv6 address to query
+          required: false
+      responses:
+         200:
+           description: OK
+         400:
+           description: Bad request
+ 
+  /bgp/routepusher/{router}/{address}/{bits}/json:
+    get:
+      summary: Get route
+      tags:
+        - bgp
+      produces:
+        - application/json
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: address
+          in: path
+          type: string
+          description: IP address part of CIDR
+          required: true
+        - name: bits
+          in: path
+          type: integer
+          description: Bits part of CIDR
+          required: true
+      responses:
+        200:
+          description: OK
+        404:
+          description: Not found
+    put:
+      summary: Create or update route
+      tags:
+        - bgp
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: address
+          in: path
+          type: string
+          description: IP address part of CIDR
+          required: true
+        - name: bits
+          in: path
+          type: integer
+          description: Bits part of CIDR
+          required: true
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - nexthop
+            properties:
+              nexthop:
+                type: string
+                description: IP address of next hop router
+                example: 10.0.0.1
+              aspath:
+                type: string
+                description: AS path
+                example: 1-2-3
+              origin:
+                type: string
+                description: Route origin
+                example: IGP
+              localpref:
+                type: integer
+                description: Local preference
+                example: 100
+              med:
+                type: integer
+                description: Multi-exit descriminator
+                example: 0
+              communities:
+                type: string
+                description: Communities
+                example: 65000:666
+      responses:
+        204:
+          description: No content 
+        400:
+          description: Bad request
+    delete:
+      summary: Delete route
+      tags:
+        - bgp
+      parameters:
+        - name: router
+          in: path
+          type: string
+          description: Router IP address
+          required: true
+        - name: address
+          in: path
+          type: string
+          description: IP address part of CIDR
+          required: true
+        - name: bits
+          in: path
+          type: integer
+          description: Bits part of CIDR
+          required: true
+      responses:
+        204:
+          description: No content
+        400:
+          description: Bad request

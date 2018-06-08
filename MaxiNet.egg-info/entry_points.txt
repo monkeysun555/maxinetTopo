@@ -1,0 +1,5 @@
+[console_scripts]
+MaxiNetFrontendServer = MaxiNet.FrontendServer.server:main
+MaxiNetStatus = MaxiNet.WorkerServer.server:getFrontendStatus
+MaxiNetWorker = MaxiNet.WorkerServer.server:main
+

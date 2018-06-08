@@ -195,7 +195,7 @@ class SSH_Tool(object):
         cm.append("%s@%s" % (user, rip))
         if(type(cmd) == str):
             if(self.config.getboolean("all", "usesudo")):
-                cmd = "sudo "+cmd
+                cmd = "sudo" + cmd
             cm.append(cmd)
         else:
             if(self.config.getboolean("all", "usesudo")):
@@ -292,9 +292,9 @@ class SSH_Tool(object):
         subprocess.call(["rm", self.key_pub])
         subprocess.call(["rmdir", os.path.dirname(self.key_priv)])
 
-#
+
 # Fat-tree topology implemention for mininet
-#
+
 class FatTree(Topo):
     def randByte(self, max=255):
         return hex(random.randint(0, max))[2:]
@@ -385,3 +385,85 @@ class Tools(object):
     def guess_ip():
         ip = subprocess.check_output("ifconfig -a | awk '/(cast)/ { print $2 }' | cut -d':' -f2 | head -1", shell=True)
         return ip.strip()
+
+
+# class FatTree(Topo):
+# 	def randByte(self, max=255):
+# 		return hex(random.randint(0, max))[2:]
+
+# 	def makeMAC(self, i):
+# 		return "00:" + self.randByte() + ":" + \
+# 			   self.randByte() + ":00:00:" + hex(i)[2:]
+
+# 	def makeDPID(self, i):
+# 		a = self.makeMAC(i)
+# 		dp = "".join(re.findall(r'[a-f0-9]+', a))
+# 		return "0" * (16 - len(dp)) + dp
+
+# 	# Here in order to establish the Datercenter topo. User define the number of software router
+# 	# and end nodes.
+# 	def __init__(self, 	numDC=2, numInt=1, numbSr=3, srsartID = 1, nodesPerSR=1, nodeStartID=1, subnet='10.0.0.', 
+# 				topology='fullmesh', bwlimit=10, lat=1, **opts):
+
+# 		Topo.__init__(self, **opts)
+# 		assert numbSr > 0
+# 		assert srsartID > 0
+# 		assert nodesPerSR > 0
+# 		assert nodeStartID > 0
+# 		assert numDC > 0
+# 		s=1
+# 		DCID = 1
+# 		self.DCList = []
+# 		self.NodeList = []
+# 		self.SRList = []
+# 		## First of all, create internet router
+# 		internetRouter = self.addSwitch('intR', dpid=self.makeDPID(s),
+# 										**dict(listenPort=(13000+s-1)))
+# 		s = s + 1
+# 		## Establish Datacenters
+# 		for k in range(numDC):
+# 			if topology == 'fullmesh':
+# 				tempSRList = []
+# 				tempNodeList = []
+# 				for i in range(numbSr): 
+
+# 					# Create service router 
+# 					sr = self.addSwitch('sr'+ str(srsartID), dpid=self.makeDPID(s),
+# 										**dict(listenPort=(13000+s-1)))
+# 					s = s + 1
+# 					print("create servie router %s" % sr)
+# 					srsartID = srsartID + 1
+# 					for tempSr in tempSRList:
+# 						print("add link between %s and %s " % (sr, tempSr))
+# 						self.addLink(sr, tempSr, bw=2.0*bwlimit, delay=str(lat)+'ms')
+# 					tempSRList.append(sr)
+
+# 					# Create node for each service router
+# 					# And connect to service router
+# 					for j in range(nodesPerSR):
+# 						h = self.addHost('h' + str(nodeStartID), mac=self.makeMAC(nodeStartID),
+# 								ip=subnet+str(nodeStartID))
+# 						print("create host %s" % h)
+# 						self.addLink(h, sr, bw=bwlimit, delay=str(lat)+'ms')
+# 						print("add link between %s and %s " % (h, sr))
+# 						nodeStartID = nodeStartID + 1
+# 						tempNodeList.append(h)
+# 			self.DCList.append([DCID, tempSRList[0]])
+# 			self.NodeList.append(tempNodeList)
+# 			self.SRList.append(tempSRList)
+# 			self.addLink(tempSRList[0], internetRouter, bw=numbSr*bwlimit, delay=str(100*lat)+'ms')
+# 			DCID = DCID + 1
+# 		# self.sg = serRouter[0];
+
+
+# 	# def serviceGW(self):
+# 	# 	print("Current DataCenter's Service Gateway is: %s" % self.sg)
+# 	# 	return self.sg
+
+
+# 	def topology(self):
+# 		print("DC lists: %s" % self.DCList)
+# 		print("Node lists: %s" % self.NodeList)
+# 		print("Service router list: %s" % self.SRList)
+# 		return
+
