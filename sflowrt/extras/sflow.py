@@ -86,7 +86,7 @@ def wrapper(fn,collector):
     print('net is %s' % net)
     print('collector is %s' % collector)
     (ifname, agent) = getIfInfo(collector)
-    print('ifname is %s and agent is %s' %(ifname, agent))
+    # print('ifname is %s and agent is %s' %(ifname, agent))
     print('type of net is %s, and net is %s' % (type(net), net))
     configSFlow(net,collector,ifname)
     sendTopology(net,agent,collector) 
