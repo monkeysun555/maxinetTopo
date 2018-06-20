@@ -60,7 +60,11 @@ def sendTopology(net,agent,collector):
     parts = re.match('(^.+)-(.+)', child)
     if parts == None: continue
     if parts.group(1) in topo['nodes']:
+      # print('path is :' + path+child+'/ifindex')
       ifindex = open(path+child+'/ifindex').read().split('\n',1)[0]
+      # print('then path: %s' % open(path+child+'/ifindex').read())
+      # print('then path: %s' % open(path+child+'/ifindex').read().split('\n',1))
+      # print('index is %s' % ifindex)
       topo['nodes'][parts.group(1)]['ports'][child] = {'ifindex': ifindex}
   i = 0
   for s1 in net.switches:
@@ -78,16 +82,70 @@ def sendTopology(net,agent,collector):
 
   put('http://'+collector+':8008/topology/json',data=dumps(topo))
 
+
+def newSendTopology(net, agent, collector):
+  topo = {'nodes':{}, 'links':{}}
+  children = []
+  for s in net.switches:
+    topo['nodes'][s.name] = {'agent':agent, 'ports':{}}
+
+
+  path = '/sys/devices/virtual/net/'
+  for worker_name in net.cluster.hostname_to_worker:
+    if worker_name != 'worker1':
+      worker = net.cluster.get_worker(worker_name)
+      childIntf = worker.run_cmd('ls '+ path)
+      # print('%s path is %s' % (worker_name, childIntf))
+      # children.append(childIntf)
+      for interface in childIntf.split('\n'):
+        print('interface is %s on worker %s' % (interface,worker_name))
+        parts = re.match('(^.+)-(.+)', interface)
+        if parts == None: continue
+        if parts.group(1) in topo['nodes']:
+          ifindex = worker.run_cmd('more '+ path + interface + '/ifindex').split('\n',1)[0]
+          # print('ifindex is %s' % ifindex)
+          topo['nodes'][parts.group(1)]['ports'][interface] = {'ifindex': ifindex}
+    else:
+      for interface in listdir(path):
+        print('interface is %s on worker %s' % (interface,worker_name))
+        parts = re.match('(^.+)-(.+)', interface)
+        if parts == None: continue
+        if parts.group(1) in topo['nodes']:
+          ifindex = open(path+interface+'/ifindex').read().split('\n',1)[0]
+          topo['nodes'][parts.group(1)]['ports'][interface] = {'ifindex': ifindex}
+
+  for link in net.origtopology.links():
+    info = net.origtopology.linkInfo(link[0], link[1])
+    # print(link[0], link[1])
+    print('link info is %s' % info)
+    s1name = info.get('node1')
+    s2name = info.get('node2')
+    s1port = s1name + '-eth' + str(info.get('port1'))
+    s2port = s2name + '-eth' + str(info.get('port2'))
+    # s1ifIdx = topo['nodes'][s1name]['ports'][s1port]['ifindex']
+    # s2ifIdx = topo['nodes'][s2name]['ports'][s2port]['ifindex']
+    linkName = '%s-%s' % (s1name, s2name)
+    topo['links'][linkName] = {'node1': s1name, 'port1': s1port, 'node2': s2name, 'port2':s2port}
+  print(topo)
+  put('http://'+collector+':8008/topology/json',data=dumps(topo))
+
+
+
+
+  # Other tested functions might be helpful
+  # for intf in s.intfNames():
+  #   link = intf
+  #   print('link of %s includes %s' % (s.name, link))
+
+  # print('%s is in exp tunnel lookup' % net.tunnellookup)
+
+
+
 def wrapper(fn,collector):
-  print('fn is %s' % fn)
   def result( *args, **kwargs):
     res = fn( *args, **kwargs)
     net = args[0]
-    print('net is %s' % net)
-    print('collector is %s' % collector)
     (ifname, agent) = getIfInfo(collector)
-    # print('ifname is %s and agent is %s' %(ifname, agent))
-    print('type of net is %s, and net is %s' % (type(net), net))
     configSFlow(net,collector,ifname)
     sendTopology(net,agent,collector) 
     return res

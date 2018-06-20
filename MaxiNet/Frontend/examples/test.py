@@ -4,54 +4,28 @@ from MaxiNet.Frontend import maxinet
 from MaxiNet.tools import FatTree
 from mininet.node import OVSSwitch
 import overlay 
-
-
 sys.path.append('/home/maxinet/MaxiNet/sflowrt/extras/')
-
 import sflow as sflow
 
+
+# Build up the topology and distribute to worders
 topo = overlay.Overlay()
-for s in topo.switches:
-    print('111')
-print ("Type of topo is %s" % type(topo))
-
-# topo.listComponents()
-
-# topo = overlay.pair()	
-
 cluster = maxinet.Cluster()
-
 exp = maxinet.Experiment(cluster, topo, switch=OVSSwitch)
 exp.setup()
 
-print ("Type of exp is %s" % type(exp))
-print ("Type of exp.topo is %s" % type(exp.topology))
-# print ("Type of exp is %s" % type(exp))
+# Feed the topo data to sflow dashboard
+(ifname, agent) = sflow.getIfInfo(sflow.collector)
+print('ifname is %s and agent is %s' % (ifname, agent))
+sflow.configSFlow(exp, sflow.collector, ifname)
+sflow.newSendTopology(exp, agent, sflow.collector)
 
-
-print exp.get_node("h1").cmd("ifconfig")  # call mininet cmd function of h1
-print exp.get_node("h2").cmd("ifconfig")  # call mininet cmd function of h2
-# print exp.get_node("h3").cmd("ifconfig")  # call mininet cmd function of h3
-
-# print exp.get_node("h4").cmd("ifconfig")  # call mininet cmd function of h4
-# print exp.get_node("h5").cmd("ifconfig")  # call mininet cmd function of h5
-# print exp.get_node("h6").cmd("ifconfig")  # call mininet cmd function of h6
-
+# Test 
 print "waiting 10 seconds for routing algorithms on the controller to converge"
-time.sleep(5)
-
+time.sleep(50)
 print exp.get_node("h1").cmd("ping -c 1 10.0.0.5")
-
-# time.sleep(1)
-
-# print exp.get_node("h1").cmd("ping -c 5 10.0.0.4")
-
-# time.sleep(1)
-
-# print exp.get_node("h5").cmd("ping -c 5 10.0.0.4")
-
-# time.sleep(1)
-
-# print exp.get_node("h5").cmd("ping -c 5 10.0.0.3")
+print exp.get_node("h2").cmd("iperf -c 10.0.0.6 -t 10")
 
 exp.stop()
+
+

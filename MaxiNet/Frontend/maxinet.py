@@ -376,6 +376,37 @@ class Worker(object):
                                                remote=dst)
         subprocess.call(cmd_put)
 
+    def sync_get_file(self, src, dst):
+        """Transfer file specified by src on worker to dst on Frontend.
+
+        Transfers file src to filename or folder dst on Frontend machine
+        via rsync. Does not transfer anything if dst already exists and
+        is the same as src.
+
+        Args:
+            src: string of path to file on Worker
+            dst: string of path to file or folder on Frontend
+        """
+        cmd_get = self.sshtool.get_rsync_get_cmd(targethostname=self.hn(),
+                                                 remote=src,
+                                                 local=dst)
+        subprocess.call(cmd_get)
+
+    def sync_put_file(self, src, dst):
+        """transfer file specified by src on Frontend to dst on worker.
+
+        Transfers file src to filename or folder dst on Worker machine
+        via rsync. Does not transfer anything if dst already exists and
+        is the same as src.
+
+        Args:
+            src: string of path to file on Frontend
+            dst: string of path to file or folder on Worker
+        """
+        cmd_put = self.sshtool.get_rsync_put_cmd(targethostname=self.hn(),
+                                                 local=src,
+                                                 remote=dst)
+        subprocess.call(cmd_put)
 
     def addHost(self, name, cls=None, **params):
         """Add host at runtime.
@@ -1581,6 +1612,10 @@ class NodeWrapper(object):
         """Checks if the node wrapper belongs to a docker host."""
         return self._get("__class__").__name__ == "Docker"
 
+    def is_libvirt(self):
+        """Checks if the node wrapper belongs to a LibvirtHost."""
+        return self._get("__class__").__name__ == "LibvirtHost"
+
     def _call(self, cmd, *params1, **params2):
         """Send method call to remote mininet instance and get return.
 
@@ -1636,6 +1671,11 @@ class NodeWrapper(object):
                         "cgroupGet", "update_resources"]:
                 return method
             elif name in ["dimage", "resources", "volumes"]:
+                return self._get(name)
+        elif self.is_libvirt():
+            if name in ["updateCpuLimit", "updateMemoryLimit", "update_resources"]:
+                return method
+            elif name in ["disk_image", "resources"]:
                 return self._get(name)
         else:
             raise AttributeError(name)
