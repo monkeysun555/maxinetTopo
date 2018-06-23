@@ -79,7 +79,7 @@ def sendTopology(net,agent,collector):
           topo['links'][linkName] = {'node1': s1.name, 'port1': intf[0].name, 'node2': s2.name, 'port2': intf[1].name}
       j += 1
     i += 1
-
+  print(topo)
   put('http://'+collector+':8008/topology/json',data=dumps(topo))
 
 
@@ -87,9 +87,8 @@ def newSendTopology(net, agent, collector):
   topo = {'nodes':{}, 'links':{}}
   children = []
   for s in net.switches:
-    topo['nodes'][s.name] = {'agent':agent, 'ports':{}}
-
-
+    ip = s.worker.ip()
+    topo['nodes'][s.name] = {'agent':ip, 'ports':{}}
   path = '/sys/devices/virtual/net/'
   for worker_name in net.cluster.hostname_to_worker:
     if worker_name != 'worker1':
@@ -120,26 +119,51 @@ def newSendTopology(net, agent, collector):
     print('link info is %s' % info)
     s1name = info.get('node1')
     s2name = info.get('node2')
-    s1port = s1name + '-eth' + str(info.get('port1'))
-    s2port = s2name + '-eth' + str(info.get('port2'))
-    # s1ifIdx = topo['nodes'][s1name]['ports'][s1port]['ifindex']
-    # s2ifIdx = topo['nodes'][s2name]['ports'][s2port]['ifindex']
-    linkName = '%s-%s' % (s1name, s2name)
-    topo['links'][linkName] = {'node1': s1name, 'port1': s1port, 'node2': s2name, 'port2':s2port}
+    if net.node_to_worker[s1name] == net.node_to_worker[s2name]:
+      s1port = s1name + '-eth' + str(info.get('port1'))
+      s2port = s2name + '-eth' + str(info.get('port2'))
+      # s1ifIdx = topo['nodes'][s1name]['ports'][s1port]['ifindex']
+      # s2ifIdx = topo['nodes'][s2name]['ports'][s2port]['ifindex']
+      linkName = '%s-%s' % (s1name, s2name)
+      topo['links'][linkName] = {'node1': s1name, 'port1': s1port, 'node2': s2name, 'port2':s2port}
+
+  # handle with tunnel between different workers
+  for tunnel in net.tunnellookup:
+    if net.node_to_worker[(str(tunnel[0]))].hn() != 'worker1':
+      worker = net.node_to_worker[(str(tunnel[0]))]
+      ifindex = worker.run_cmd('more '+ path + net.tunnellookup[tunnel] + '/ifindex').split('\n',1)[0]
+      topo['nodes'][str(tunnel[0])]['ports'][net.tunnellookup[tunnel]] = {'ifindex': ifindex}
+    else:
+      ifindex = open(path + net.tunnellookup[tunnel]+'/ifindex').read().split('\n',1)[0]
+      topo['nodes'][str(tunnel[0])]['ports'][net.tunnellookup[tunnel]] = {'ifindex': ifindex}
+
+  added_tunnel = []
+  for tunnel in net.tunnellookup:
+    if net.tunnellookup[tunnel] not in added_tunnel:
+      added_tunnel.append(net.tunnellookup[tunnel])
+      s1name = str(tunnel[0])
+      s2name = str(tunnel[1])
+      s1port = net.tunnellookup[tunnel]
+      s2port = net.tunnellookup[tunnel]
+      linkName = '%s-%s' % (s1name, s2name)
+      topo['links'][linkName] = {'node1': s1name, 'port1': s1port, 'node2': s2name, 'port2':s2port}
+
   print(topo)
   put('http://'+collector+':8008/topology/json',data=dumps(topo))
 
-
-
-
+# For test
+def tunnel_func(net, agent, collector):
+  print('%s is in exp tunnel lookup' % net.tunnellookup)
+  for tunnel in net.tunnellookup:
+    print(net.node_to_worker[(str(tunnel[0]))].hn())
+    print(type(tunnel))
+    print(net.tunnellookup[tunnel])
+  # for x in net.node_to_worker:
+  # print(net.node_to_worker)
   # Other tested functions might be helpful
   # for intf in s.intfNames():
   #   link = intf
   #   print('link of %s includes %s' % (s.name, link))
-
-  # print('%s is in exp tunnel lookup' % net.tunnellookup)
-
-
 
 def wrapper(fn,collector):
   def result( *args, **kwargs):
