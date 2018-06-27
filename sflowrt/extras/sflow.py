@@ -10,7 +10,7 @@ import array
 import struct
 import sys
 
-collector = environ.get('COLLECTOR','127.0.0.1')
+collector = environ.get('COLLECTOR','192.168.123.1')
 sampling = environ.get('SAMPLING','10')
 polling = environ.get('POLLING','10')
 
@@ -46,9 +46,31 @@ def configSFlow(net,collector,ifname):
   print "*** Enabling sFlow:"
   sflow = 'ovs-vsctl -- --id=@sflow create sflow agent=%s target=%s sampling=%s polling=%s --' % (ifname,collector,sampling,polling)
   for s in net.switches:
-    sflow += ' -- set bridge %s sflow=@sflow' % s
-  print ' '.join([s.name for s in net.switches])
+    sflow += ' -- set bridge %s sflow=@sflow' % s.name
+  print(' '.join([s.name for s in net.switches]))
+  print("finally sflow is lke: " + sflow)
   quietRun(sflow)
+
+def newconfigSFlow(net,collector,ifname):
+  print "*** Enabling sFlow:"
+  for worker_name in net.cluster.hostname_to_worker:
+    agent_name = worker_name + '_' + ifname  
+    sflow = 'ovs-vsctl -- --id=@sflow create sflow agent=%s target=%s sampling=%s polling=%s --' % (agent_name,collector,sampling,polling)  
+    worker = net.cluster.get_worker(worker_name) 
+    if worker_name != 'worker1':
+      for s in net.switches:
+        if net.get_worker(s.name) == worker:
+          sflow += ' -- set bridge %s sflow=@sflow' % s.name
+      print("finally sflow is lke: " + sflow)
+      worker.run_cmd(sflow)
+    else:
+      for s in net.switches:
+        if net.get_worker(s.name) == worker:     
+          sflow += ' -- set bridge %s sflow=@sflow' % s.name 
+      print("finally sflow is lke: " + sflow)
+      quietRun(sflow)
+
+    print(' '.join([s.name for s in net.switches]))
 
 def sendTopology(net,agent,collector):
   print "*** Sending topology"
