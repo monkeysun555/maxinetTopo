@@ -54,7 +54,7 @@ def configSFlow(net,collector,ifname):
 def newconfigSFlow(net,collector,ifname):
   print "*** Enabling sFlow:"
   for worker_name in net.cluster.hostname_to_worker:
-    agent_name = worker_name + '_' + ifname  
+    agent_name = 'eth0'  
     sflow = 'ovs-vsctl -- --id=@sflow create sflow agent=%s target=%s sampling=%s polling=%s --' % (agent_name,collector,sampling,polling)  
     worker = net.cluster.get_worker(worker_name) 
     if worker_name != 'worker1':

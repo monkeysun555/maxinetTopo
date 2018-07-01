@@ -28,6 +28,11 @@ print exp.get_node("h2").cmd("ping -c 3 10.0.0.6")
 time.sleep(1)
 print exp.get_node("h5").cmd("ping -c 3 10.0.0.1")
 
+# exp.get_node("h5").sendCmd("iperf -s -t 10")
+# print(exp.get_node("h1").cmd("iperf -c 10.0.0.5 -t 5"))
+# exp.get_node("h5").sendCmd("kill iperf")
+
+# time.sleep(100)
 # exp.CLI('./', './')
 # print(exp.get_node("h6").cmd("iperf -s"))
 # print(exp.get_node("h2").cmd("iperf -c 10.0.0.6 -t 10"))
