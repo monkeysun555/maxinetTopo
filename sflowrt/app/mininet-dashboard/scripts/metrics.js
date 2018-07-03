@@ -13,7 +13,7 @@ setFlow('mn_flow',{keys:'ipsource,ipdestination,ipprotocol,or:tcpsourceport:udps
 
 function calculateTopN(metric,n,minVal,total_bps) {     
   var total, top, topN, i, bps;
-  top = activeFlows('TOPOLOGY',metric,n,minVal,'sum');
+  top = activeFlows('TOPOLOGY',metric,n,minVal,'max');
   var topN = {};
   if(top) {
     total = 0;
@@ -22,7 +22,7 @@ function calculateTopN(metric,n,minVal,total_bps) {
       topN[top[i].key] = bps;
       total += bps;
     }
-    if(total_bps > total) topN[other] = total_bps - total;
+    // if(total_bps > total) topN[other] = total_bps - total;
   }
   return topN;
 }
@@ -43,7 +43,7 @@ function calculateTopInterfaces(metric,n) {
 }
 
 function flowCount(flow) {
-  var res = activeFlows('TOPOLOGY',flow,1,0,'sum');
+  var res = activeFlows('TOPOLOGY',flow,1,0,'max');
   return res && res.length > 0 ? res[0].value : 0;
 }
 
@@ -52,7 +52,7 @@ setIntervalHandler(function(now) {
   points['diameter'] = topologyDiameter();
 
   var bps = flowCount('mn_bytes') * 8;  
-  points['top-5-flows'] = calculateTopN('mn_flow',5,0,bps);
+  points['top-5-flows'] = calculateTopN('mn_flow',5,0, points.bps);
   points['top-5-interfaces'] = calculateTopInterfaces('mn_bytes',5); 
 
   trend.addPoints(now,points);
