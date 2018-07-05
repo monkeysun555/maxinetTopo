@@ -1,4 +1,4 @@
-var scale    = getSystemProperty('world-map.scale')    || 10;
+var scale    = getSystemProperty('world-map.scale')    || 2;
 var aggMode  = getSystemProperty('world-map.aggMode')  || 'sum';
 var maxFlows = getSystemProperty('world-map.maxFlows') || 1000;
 var minValue = getSystemProperty('world-map.minValue') || 0.01;
@@ -30,6 +30,20 @@ setHttpHandler(function(req) {
        }); 
      }
    }
+
+
+    // let flow = {}
+     // flow['ori'] = src;
+     // flow['dst'] = dst;
+     // flow['volume'] = val;
+     // flows[i] = flow;
+     // for(let lk in flows){
+     //   arcs.push({
+     //    'origin': geoIPmapping(flows[lk].ori),
+     //    'dst': geoIPmapping(flows[lk].dst),
+     //    'widthvalue': Math.max(1,Math.log10(flows[lk].volume)*scale)
+     //   }) 
+     // }
    return result;
 });
 

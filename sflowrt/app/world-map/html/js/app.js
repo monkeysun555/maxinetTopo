@@ -22,6 +22,24 @@ $(function() {
         centered:cc3
       });
     }
+
+    // for(var i = 0; i < data[1].length; i++) {
+    //   var entry = data[1][i];
+    //   var widthvalue = entry.widthvalue;
+    //   var cc3ori = cc2to3[entry.ori];
+    //   var cc3dst = cc2to3[entry.dst];
+
+    //   if(!widthvalue || !cc3ori || !cc3dst) continue;
+    //   var ccname = cc3ori + cc3dst;
+    //   arcs.push({
+    //     name: ccname,
+    //     fillKey: 'traffic',
+    //     origin: cc3ori,
+    //     destination = cc3dst,
+    //     strokeWidth: widthvalue
+    //     // centered: cc3
+    //   });
+    // }
     map.bubbles(bubbles);
   };
   function pollStatus() {
@@ -45,8 +63,21 @@ $(function() {
       element:document.getElementById('container'),
       responsive:true,
       fills:{traffic:'red',defaultFill:'#cccccc'},
-      bubblesConfig:{animate:false}
+      bubblesConfig:{animate:true},
+      // fills: {
+      //   defaultFill: "#ABDDA4",
+      //   win: '#0fa0fa'
+      // }
     });
+    
+    map.arc([
+      {
+        origin:{
+          latitude:40.072963,
+          longitude: -98.564512
+        },
+        destination: 'CHN'
+      }],{strokeWidth: 1, arcSharpness: 1.4});
     pollStatus();
   });
 });
