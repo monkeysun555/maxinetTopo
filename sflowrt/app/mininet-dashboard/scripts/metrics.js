@@ -52,7 +52,7 @@ setIntervalHandler(function(now) {
   points['diameter'] = topologyDiameter();
 
   var bps = flowCount('mn_bytes') * 8;  
-  points['top-5-flows'] = calculateTopN('mn_flow',5,0, points.bps);
+  points['top-5-flows'] = calculateTopN('mn_flow',5,0.1, points.bps);
   points['top-5-interfaces'] = calculateTopInterfaces('mn_bytes',5); 
 
   trend.addPoints(now,points);

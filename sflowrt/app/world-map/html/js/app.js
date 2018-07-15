@@ -9,8 +9,9 @@ $(function() {
   }
   function updateStatus(data) {
     var bubbles = [];
-    for(var i = 0; i < data.length; i++) {
-      var entry = data[i];
+    var arcs = [];
+    for(var i = 0; i < data[0].length; i++) {
+      var entry = data[0][i];
       var radius = entry.radius;
       var cc3 = cc2to3[entry.country];
       if(!radius || !cc3) continue;
@@ -23,24 +24,33 @@ $(function() {
       });
     }
 
-    // for(var i = 0; i < data[1].length; i++) {
-    //   var entry = data[1][i];
-    //   var widthvalue = entry.widthvalue;
-    //   var cc3ori = cc2to3[entry.ori];
-    //   var cc3dst = cc2to3[entry.dst];
-
-    //   if(!widthvalue || !cc3ori || !cc3dst) continue;
-    //   var ccname = cc3ori + cc3dst;
-    //   arcs.push({
-    //     name: ccname,
-    //     fillKey: 'traffic',
-    //     origin: cc3ori,
-    //     destination = cc3dst,
-    //     strokeWidth: widthvalue
-    //     // centered: cc3
-    //   });
-    // }
+    for(var i = 0; i < data[1].length; i++) {
+      var entry = data[1][i];
+      var widthvalue = entry.val;
+      var cc3ori = cc2to3[entry.ori];
+      var cc3dst = cc2to3[entry.dst];
+      if(cc3ori == 'USA'){
+        cc3ori = {latitude:40.072963,
+                  longitude: -98.564512
+                }
+      }
+      if(cc3dst == 'USA'){
+        cc3dst = {latitude:40.072963,
+                  longitude: -98.564512
+                }
+      }
+      if(!widthvalue || !cc3ori || !cc3dst) continue;
+      var ccname = cc3ori + cc3dst;
+      arcs.push({
+        name: ccname,
+        origin:cc3ori,
+        destination:cc3dst,
+        strokeWidth:widthvalue
+        // centered: cc3
+      });
+    }
     map.bubbles(bubbles);
+    map.arc(arcs);
   };
   function pollStatus() {
     $.ajax({
@@ -70,14 +80,14 @@ $(function() {
       // }
     });
     
-    map.arc([
-      {
-        origin:{
-          latitude:40.072963,
-          longitude: -98.564512
-        },
-        destination: 'CHN'
-      }],{strokeWidth: 1, arcSharpness: 1.4});
+    // map.arc([
+    //   {
+    //     origin:{
+    //       latitude:40.072963,
+    //       longitude: -98.564512
+    //     },
+    //     destination: 'CHN'
+    //   }],{strokeWidth: 1, arcSharpness: 1.4});
     pollStatus();
   });
 });
