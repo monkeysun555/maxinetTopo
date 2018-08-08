@@ -55,10 +55,10 @@ setHttpHandler(function(req) {
 
 function geoIPmapping(ip){
   var country = '';
-  if(ip == '10.0.0.1' || ip == '10.0.0.2' || ip == '10.0.0.3'){
+  if(ip == '10.0.0.1' || ip == '10.0.0.2' || ip == '10.0.0.3' || ip == '10.0.0.200'){
     country = 'us';
   }
-  else if(ip == '10.0.0.4' || ip == '10.0.0.5' || ip == '10.0.0.6'){
+  else if(ip == '10.0.0.4' || ip == '10.0.0.5' || ip == '10.0.0.6' || ip == '10.0.0.100'){
     country = 'cn';
   }
 

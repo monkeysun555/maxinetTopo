@@ -12,9 +12,9 @@ class Overlay(Topo):
 
 	# Here in order to establish the datacenter topo. User define the number of software router
 	# and end nodes.
-	def __init__(self, 	numDC=2, numSr=3, nodesPerSr=1,  \
-				internetTopo = 'singleRouter', DCtopo='line', subnet='10.0.0.', \
-				bwlimit=10, lat=1, **opts):
+	def __init__(self, 	numDC=2, numSr=2, nodesPerSr=2,  \
+				internetTopo = 'doubleRouter', DCtopo='line', subnet='10.0.', \
+				bwlimit=10, lat=10, **opts):
 
 		Topo.__init__(self, **opts)
 		assert numSr > 0
@@ -26,12 +26,19 @@ class Overlay(Topo):
 		# self.servicerouters = []
 		# self.nodes = []
 
-		internet = self.createInternet()
+		internet = self.createInternet(internetTopo)
 
-		for i in range(numDC):
-			datacenter, srList, nodeList = self.createDC(numofDC, numSr, nodesPerSr, DCtopo, subnet, bwlimit, lat)
-			self.connect(datacenter[1], internet[0], bwlimit, lat)
-			numofDC += 1
+		if internetTopo == 'singleRouter':
+			for i in range(numDC):
+				datacenter, srList, nodeList = self.createDC(numofDC, numSr, nodesPerSr, DCtopo, subnet, bwlimit, lat)
+				self.connect(datacenter[1], internet[0], bwlimit, lat)
+				numofDC += 1
+		elif internetTopo == 'doubleRouter':
+			for i in range(numDC):
+				datacenter, srList, nodeList = self.createDC(numofDC, numSr, nodesPerSr, DCtopo, subnet, bwlimit, lat)
+				self.connect(datacenter[1], internet[0], bwlimit, 5*lat)
+				self.connect(datacenter[1], internet[1], bwlimit, lat)
+				numofDC += 1
 			# self.datacenters.append(datacenter)
 			# self.servicerouters.append(srList)
 			# self.nodes.append(nodeList)
@@ -44,6 +51,15 @@ class Overlay(Topo):
 			internetRouter = self.addSwitch('intR'+ str(routerIndex), dpid=Tools.makeDPID(routerIndex),
 										**dict(listenPort=(10000+routerIndex-1)))
 			internetRouterList.append(internetRouter)
+		elif internetTopo == 'doubleRouter':
+			internetRouter = self.addSwitch('intR'+ str(routerIndex), dpid=Tools.makeDPID(routerIndex),
+										**dict(listenPort=(10000+routerIndex-1)))
+			internetRouterList.append(internetRouter)
+			routerIndex += 1
+			internetRouter = self.addSwitch('intR'+ str(routerIndex), dpid=Tools.makeDPID(routerIndex),
+										**dict(listenPort=(10000+routerIndex-1)))	
+			internetRouterList.append(internetRouter)		
+			print("internet is like: %s" % internetRouterList)
 		return internetRouterList
 
 	def createDC(self, numofDC, numSr, nodesPerSr, DCtopo, subnet, bwlimit, lat):
@@ -60,14 +76,15 @@ class Overlay(Topo):
 										**dict(listenPort=(13000+srIdx-1)))
 			print("create sr %s" % sr)
 			# create nodes
-			for j in range(nodesPerSr):
-				h = self.addHost('h' + str(nodeIdx), mac=Tools.makeMAC(nodeIdx),
-								ip=subnet+str(nodeIdx))
-				print("create host %s" % h)
-				nodeList.append(h)
-				self.addLink(h, sr, bw=bwlimit, delay=str(lat)+'ms')
-				print("add link between %s and %s" % (h, sr))
-				nodeIdx += 1
+			if i != 0:
+				for j in range(nodesPerSr):
+					h = self.addHost('h' + str(nodeIdx), mac=Tools.makeMAC(nodeIdx),
+									ip=subnet + str(numofDC) + '.' +str(nodeIdx+100)+'/24', defaultRoute ='h'+str(nodeIdx)+'-eth0')
+					print("create host %s" % h)
+					nodeList.append(h)
+					self.addLink(h, sr, bw=2*bwlimit, delay=str(lat)+'ms')
+					print("add link between %s and %s" % (h, sr))
+					nodeIdx += 1
 			srIdx += 1
 			
 			# if fullmesh, ovs should be defined to break loop!!!
@@ -78,7 +95,8 @@ class Overlay(Topo):
 					print("add link between %s and %s" % (sr, srList[tempSrIdx]))
 			elif DCtopo == 'line':
 				if len(srList) > 0:
-					self.addLink(sr, srList[-1], bw=bwlimit, delay=str(lat)+'ms')
+					self.addLink(sr, srList[-1], bw=2*bwlimit, delay=str(lat)+'ms')
+					print("add link between %s and %s" % (sr, srList[-1]))
 			srList.append(sr)
 
 		DC = [DCIdx, srList[0]]
@@ -117,7 +135,6 @@ class Overlay(Topo):
 # 		h2 = self.addHost('h' + str(k), mac=Tools.makeMAC(k), ip=subnet+str(k))
 # 		k += 1
 # 		self.addLink(h2, sr2, bw=bwlimit, delay=str(lat)+'ms')
-
 # 		self.addLink(sr1, sr2, bw=bwlimit, delay=str(lat)+'ms')
 
 

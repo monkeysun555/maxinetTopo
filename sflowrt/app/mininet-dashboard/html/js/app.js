@@ -148,7 +148,7 @@ $(function() {
   }
 
   function updateData(data) {
-    // console.log(data)
+    console.log(data)
     updateNetwork(data);
     if(!data 
       || !data.trend 
